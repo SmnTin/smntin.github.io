@@ -11,6 +11,7 @@ plugins:
   - jekyll-gist
   - jekyll-paginate
   - jekyll-seo-tag
+  - jekyll-email-protect
 
 # Optimize Jekyll
 exclude:
@@ -44,5 +45,6 @@ nav:
   - title: Blog
     url: /blog
 
-  - title: About
-    url: /about
+# Collections like projects and posts
+collections:
+  - projects
