@@ -1,7 +1,8 @@
 # Setup
-title: Dark Poole
-url: https://getpoole.com
-paginate: 1
+title: SmnTin's Bay
+url: https://smntin.github.io
+paginate: 2
+paginate_path: "/blog/page_:num/"
 baseurl: ""
 permalink: pretty
 
@@ -32,9 +33,8 @@ sass:
 
 # Specify the author for blog posts
 author:
-  name: Mark Otto
-  url: https://twitter.com/mdo
-  email: markdotto@gmail.com
+  name: Semyon Panenkov
+  url: https://github.com/SmnTin
 
 # Custom vars
 version: 3.0.0
@@ -42,7 +42,7 @@ version: 3.0.0
 # Navbar page list
 nav:
   - title: Blog
-    url: /archive
+    url: /blog
 
   - title: About
     url: /about
