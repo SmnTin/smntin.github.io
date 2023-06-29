@@ -1,8 +1,8 @@
 # Setup
-title: SmnTin's Bay
+title: SmnTin's bay
 url: https://smntin.github.io
-paginate: 2
-paginate_path: "/blog/page_:num/"
+paginate: 10
+paginate_path: "/blog/page-:num/"
 baseurl: ""
 permalink: pretty
 
