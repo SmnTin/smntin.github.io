@@ -3,17 +3,9 @@ layout: default
 title: Home
 ---
 
-<img align="right" width="200" style="margin-left: 20px" src="assets/my-photo.jpeg">
-Ffjnf sgvjsekfnk jesnfknsekj fneskjnfkjse fsenfkljsenkfn jkfnsenfk fekfnejknf fkjenkfnekjnf nfjkenfne nfkjenfe nfkenkfne kjfneknf nfeknfke kfneknfken kenfkenfke. Ffjnf sgvjsekfnk jesnfknsekj fneskjnfkjse fsenfkljsenkfn jkfnsenfk fekfnejknf fkjenkfnekjnf nfjkenfne nfkjenfe nfkenkfne kjfneknf nfeknfke kfneknfken kenfkenfke. Ffjnf sgvjsekfnk jesnfknsekj fneskjnfkjse fsenfkljsenkfn jkfnsenfk fekfnejknf fkjenkfnekjnf nfjkenfne nfkjenfe nfkenkfne kjfneknf nfeknfke kfneknfken kenfkenfke.
-
-Ffjnf sgvjsekfnk jesnfknsekj fneskjnfkjse fsenfkljsenkfn jkfnsenfk fekfnejknf fkjenkfnekjnf nfjkenfne nfkjenfe nfkenkfne kjfneknf nfeknfke kfneknfken kenfkenfke.
+<img align="right" width="170" style="margin-left: 20px" src="assets/my-photo.jpeg">
+Hi! Welcome to my personal page. I have just graduated from a uni. I am interested in building reliable and highly performant systems by leveraging formal methods and systems programming languages. I am also interested in functional programming and type theory. I was doing some robotics and gamedev in the past.
 
 # Projects
 
-{% for project in site.projects %}
-
-### [{{ project.title }}]({{ project.github }})
-
-{{ project.content | markdownify }}
-
-{% endfor %}
+{% include projects.html %}

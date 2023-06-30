@@ -1,0 +1,22 @@
+{% assign projectsByYear = site.projects | group_by_exp: "project", "project.year"
+| sort: "name" | reverse %}
+{% for year in projectsByYear %}
+  <h2>{{ year.name }}</h2>
+  <ul class="projects">
+    {% for project in year.items %}
+      <li class="project"> 
+        {% if project.github %}
+          <a href="{{ project.github }}" target="_blank">{{ project.title }}</a>
+        {% else %}
+          <span>{{ project.title }}</span>
+        {% endif %}
+        {{ project.content }}
+        <ul class="tags">
+          {% for tag in project.tags %}
+            <li>{{ tag }}</li>
+          {% endfor %}
+        </ul>
+      </li>
+    {% endfor %}
+  </ul>
+{% endfor %}

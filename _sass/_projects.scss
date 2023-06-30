@@ -1,0 +1,30 @@
+.project {
+    ul.tags {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .tags li {
+        background-color: var(--gray-700);
+        display: inline-block;
+
+        text-align: center;
+        vertical-align: middle;
+
+        font-size: 0.8em;
+        height: 1.6em;
+        line-height: 1.6em;
+        padding-left: 0.7em;
+        padding-right: 0.7em;
+        border-radius: 0.3em 0.3em 0.3em 0.3em;
+    }
+    
+    p {
+        margin-bottom: 0.2em;
+    }
+}
+
+li.project:not(:last-child) {
+    margin-bottom: 1em;
+}
