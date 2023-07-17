@@ -1,5 +1,11 @@
 .badges {
+    margin-bottom: 2rem;
+    
+    a {
+        text-decoration: none;
+    }
     img {
         display: inline;
+        margin-bottom: 0;
     }
 }
