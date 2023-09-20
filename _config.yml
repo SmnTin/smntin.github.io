@@ -41,9 +41,9 @@ author:
 version: 3.0.0
 
 # Navbar page list
-# nav:
-#   - title: Blog
-#     url: /blog
+nav:
+  - title: Blog
+    url: /blog
 
 # Collections like projects and posts
 collections:
