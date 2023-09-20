@@ -1,0 +1,16 @@
+{% assign giscus = site.giscus %}
+<script src="https://giscus.app/client.js"
+        data-repo="{{ giscus.repo }}"
+        data-repo-id="{{ giscus.repo-id }}"
+        data-category="{{ giscus.category }}"
+        data-category-id="{{ giscus.category-id }}"
+        data-mapping="pathname"
+        data-strict="0"
+        data-reactions-enabled="{{ giscus.reactions-enabled }}"
+        data-emit-metadata="0"
+        data-input-position="bottom"
+        data-theme="{{ giscus.theme }}"
+        data-lang="en"
+        crossorigin="anonymous"
+        async>
+</script>
