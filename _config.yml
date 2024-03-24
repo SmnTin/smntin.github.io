@@ -12,6 +12,7 @@ plugins:
   - jekyll-paginate
   - jekyll-seo-tag
   - jekyll-email-protect
+  - jekyll-feed
 
 # Optimize Jekyll
 exclude:
@@ -37,6 +38,9 @@ author:
   name: Semyon Panenkov
   url: https://github.com/SmnTin
 
+feed:
+  posts_limit: 256
+  
 # Custom vars
 version: 3.0.0
 
@@ -44,6 +48,8 @@ version: 3.0.0
 nav:
   - title: Blog
     url: /blog
+  - title: Atom
+    url: /atom.xml
 
 # Collections like projects and posts
 collections:
