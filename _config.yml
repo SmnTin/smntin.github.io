@@ -55,6 +55,9 @@ nav:
 collections:
   - projects
 
+rouge:
+  theme: github
+
 giscus:
   repo:                "SmnTin/smntin.github.io"
   repo-id:             "R_kgDOJ1mn6A"
