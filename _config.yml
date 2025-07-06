@@ -4,7 +4,7 @@ url: https://smntin.github.io
 paginate: 10
 paginate_path: "/blog/page-:num/"
 baseurl: ""
-permalink: pretty
+permalink: /blog/:year/:title/
 
 # Gems
 plugins:

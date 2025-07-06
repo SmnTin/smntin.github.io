@@ -56,3 +56,18 @@ pre {
 .gist .markdown-body {
   padding: 15px !important;
 }
+
+.code-filename {
+  background: var(--code-filename-bg);
+  color: #bbb;
+  font-family: var(--code-font);
+  font-size: 80%;
+  padding: 0.4rem 0.8rem;
+  border-top-left-radius: var(--border-radius);
+  border-top-right-radius: var(--border-radius);
+  border-bottom: none;
+  margin-bottom: calc(-1 * var(--border-radius)); // Pulls tight against the code block
+
+  z-index: 2;
+  position: relative;
+}
