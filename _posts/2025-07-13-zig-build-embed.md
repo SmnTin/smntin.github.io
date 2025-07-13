@@ -2,14 +2,13 @@
 title: Embedding machine code with the Zig Build System
 layout: post
 comments: true
-hidden: true
 ---
 
-For purposes that would become clear in a future post, I needed to solve a curious problem in the Zig build system. Prior to that, I knew very little about it. I expected the problem to be easy to solve, and it quite is, but I discovered a lot along the way.
+For purposes that would become clear in a future post, I needed to solve a curious problem in the Zig build system. Prior to that, I knew very little about it. I expected the problem to be easy to solve, and it actually is, but I discovered a lot along the way.
 
-The problem goes as follows. I want to assemble a listing with `nasm` and embed the machine code in the Zig program to be able to manipulate it as plain bytes. The curious part is that I want to utilize the build system to automate the process and cache/rebuild as needed.
+Here’s the problem I needed to solve: I wanted to assemble a listing with `nasm` and embed the machine code in the Zig program to be able to manipulate it as plain bytes. What’s interesting is that I wanted to utilize the build system to automate the process and cache/rebuild as needed.
 
-I would try to present a more or less linear story with a few shoot-offs in an order that somewhat resembles the order I discovered the things. If you just want the answer, jump straight to the [conclusion](#conclusion).
+The post is basically a write-up of my findings. The final solution is in the [conclusion](#conclusion), but the path to there was quite fun.
 
 <!--break-->
 
@@ -17,22 +16,22 @@ I would try to present a more or less linear story with a few shoot-offs in an o
 
 I'm still very new to Zig and its tooling so I might have gotten many things wrong.
 
-Moreover, this is a very convoluted way to get assembly in your program. If you just want to implement some routines in assembly, assemble the listings into an object file and link against it (though you can set this up in the build system very similarly).
+Moreover, this is a very convoluted way to get assembly in your program. If you simply want to implement some routines in assembly, assemble an object file and link against it (though, you can set this up in the build system very similarly).
 
-Please also note that a lot has changed in the build system in previous versions and a lot will change for sure. Zig is nowhere near to be stable. But I still believe that many fundamental things discussed in the post will hold up.
+Please also note that a lot has changed in the build system in previous versions and a lot will change for sure. Zig is nowhere near to be stable. But it seems that some fundamental things discussed in the post will hold up.
 
 ## Existing references
 
 I won't give a ground-up introduction to the Zig build system. There are already awesome guides and resources to get started:
-  - [zig build explained (in 3 parts)](https://zig.news/xq/zig-build-explained-part-1-59lf)
-  - [Zig Build System Internals](https://mitchellh.com/zig/build-internals) by Mitchell Hashimoto
-  - [Zig Build System Basics](https://www.youtube.com/watch?v=jy7w_7JZYyw) by [Loris Cro](https://github.com/kristoff-it)
+  - A recent [video](https://www.youtube.com/watch?v=jy7w_7JZYyw) by [Loris Cro](https://github.com/kristoff-it), the VP of the Zig community, introducing the basics of the build system.
+  - A 3-part [blog series](https://zig.news/xq/zig-build-explained-part-1-59lf) by Felix Queißner that goes into more detail.
+  - A deep [dive](https://mitchellh.com/zig/build-internals) in the internals of the build system by Mitchell Hashimoto, creator of [`ghostty`](https://ghostty.org/).
 
-I would like to build on top of them, and show some other details.
+I’d like to build on top of those and share some other details.
 
-With the ceremony out of the way, there is the story.
+With the ceremony out of the way, here's the story.
 
-## Here the story goes
+## Into the woods
 
 Let's start with the initial setup. The Zig version is 0.14.1, and I am on a Linux machine.
 
@@ -104,7 +103,7 @@ At the moment, we have no instructions to assemble `src/example.asm` in the buil
 $ nasm -fbin -o src/example.bin src/example.asm
 ```
 
-Fortunately, everything builds, and we get an output:
+Fortunately, everything builds, and we get some output:
 ```shell
 $ zig build run
 4883c005
@@ -121,7 +120,7 @@ $ zig build run | xxd -r -p | ndisasm -b 64 -
 00000000  4883C005          add rax,byte +0x5
 ```
 
-What's nice about this setup is that the output from the build system and the compiler goes to the `stderr` so it doesn't interfere with what gets piped in the pipeline.
+What's nice about this setup is that the output from the build system and the compiler goes to `stderr` so it doesn't interfere with what gets passed in the pipeline.
 
 ## First attempt at automating the assembly process
 
@@ -151,15 +150,15 @@ add rax, 6
 $ zig build run | xxd -r -p | ndisasm -b 64 -
 00000000  4883C006          add rax,byte +0x6
 ```
-It reassembles the file and recompiles the `embed-example` binary without recompiling the build script. If we run it again, it won't recompile anything because the inputs to the compilation step haven't changed. Hooray!
+It reassembles the file and recompiles the `embed-example` binary. If we run it again, it won't recompile anything because the inputs to the compilation step haven't changed. Hooray!
 
 However, this solution has three problems:
 1. We have to make the `exe` step explicitly depend on the `nasm` step. Otherwise, the build system might run these steps in a wrong order or even in parallel because it doesn't know that `src/example.bin` is generated by another step.
 2. The generated artifact ends up in the source tree. This might be a desirable behavior if we do code generation and want to commit and diff the generated code[^codegen-CI], but for such transient blobs this is not the case.
-3. Even though, this command is run each time the build script executes[^nasm-no-cache-rerun], it doesn't get rerun in the `--watch` mode when `src/example.asm` changes because the build system doesn't know that the step depends on this file.
+3. Even though this command is run each time the build script executes[^nasm-no-cache-rerun], it doesn't get rerun in the `--watch` mode when `src/example.asm` changes because the build system doesn't know that the step depends on this file.
 
 [^codegen-CI]: In this case, you'd want to add a switch for CI that checks that the files in the source tree are correct instead of overwriting them ([example](https://github.com/tigerbeetle/tigerbeetle/blob/6a6e39e68d2aea5683a3ddf2091042fd45e4ba16/build.zig#L1749)).
-[^nasm-no-cache-rerun]: Despite of caching and provided that the `nasm` step is accessible from a top-level step like `install`.
+[^nasm-no-cache-rerun]: Despite caching and provided that the `nasm` step is accessible from a top-level step like `install`. This is a subtle behavior and is discussed in more detail later in the post.
 
 ## Getting rid of the explicit dependency
 
@@ -170,7 +169,7 @@ exe_mod.addAnonymousImport("example", .{
 });
 ```
 
-This snippet is equvalent to the following:
+This snippet is equivalent to the following:
 ```zig
 exe_mod.addImport("example", b.createModule(.{
     .root_source_file = b.path("src/example.bin"),
@@ -179,16 +178,16 @@ exe_mod.addImport("example", b.createModule(.{
 
 We create an anonymous module with the root file `src/example.bin`[^non-zig-mod] and allow to import it by the name "example".
 
-We can now reference and embed the file by the new alias:
+We can now reference the file by the new alias:
 ```zig
 const bytes = @embedFile("example");
 ```
 
-[^non-zig-mod]: This seems somewhat hacky because modules are supposed for Zig code. However, there is a similar [example](https://gist.github.com/andrewrk/d1e6173448ab2bc350233cc20025ba56) by Andrew Kelley himself, so this seems to be valid in the current version as long as we use the module with `@embedFile` only and don't try to `@import` it.
+[^non-zig-mod]: This seems somewhat hacky because modules are supposed for Zig code. However, there is a similar [example](https://gist.github.com/andrewrk/d1e6173448ab2bc350233cc20025ba56) by Andrew Kelley himself, so this seems to be valid in the current version, as long as we use the module with `@embedFile` only and don't try to `@import` it.
 
 That way, we have detached the import key from the actual file location and can play with the `.root_source_file` path.
 
-In fact, the type of `b.path("src/example.bin")` is `LazyPath`. This is a tagged union whose true potential we are to discover later.
+In fact, the type of `b.path("src/example.bin")` is `LazyPath`. This is a tagged union, and it provides several options to refer to a file.
 
 The `path` method on `Builder` allows us to reference a static file in the source tree:
 ```zig
@@ -206,20 +205,20 @@ pub fn path(b: *Build, sub_path: []const u8) LazyPath {
 
 However, `LazyPath` has another variant:
 ```zig
-/// a reference to an existing or future path.
-pub const lazypath = union(enum) {
+/// A reference to an existing or future path.
+pub const LazyPath = union(enum) {
     // ...
 
     generated: struct {
-        file: *const generatedfile,
+        file: *const GeneratedFile,
 
-        /// the number of parent directories to go up.
+        /// The number of parent directories to go up.
         /// 0 means the generated file itself.
         /// 1 means the directory of the generated file.
         /// 2 means the parent of that directory, and so on.
         up: usize = 0,
 
-        /// applied after `up`.
+        /// Applied after `up`.
         sub_path: []const u8 = "",
     },
 
@@ -227,16 +226,16 @@ pub const lazypath = union(enum) {
 };
 ```
 
-it takes a pointer to a `generatedfile` which defined as follows:
+It takes a pointer to a `GeneratedFile` which defined as follows:
 ```zig
-/// a file that is generated by a build step.
-/// this struct is an interface that is meant to be used with `@fieldparentptr` to implement the actual path logic.
-pub const generatedfile = struct {
-    /// the step that generates the file
-    step: *step,
+/// A file that is generated by a build step.
+/// This struct is an interface that is meant to be used with `@fieldParentPtr` to implement the actual path logic.
+pub const GeneratedFile = struct {
+    /// The step that generates the file
+    step: *Step,
 
-    /// the path to the generated file. must be either absolute or relative to the build root.
-    /// this value must be set in the `fn make()` of the `step` and must not be `null` afterwards.
+    /// The path to the generated file. must be either absolute or relative to the build root.
+    /// This value must be set in the `fn make()` of the `step` and must not be `null` afterwards.
     path: ?[]const u8 = null,
 
     // ...
@@ -279,13 +278,13 @@ $ zig build
 {  }
 ```
 
-Wait... What?..
+Wait... what?
 
-### Where module dependencies are resolved
+## Where module dependencies are resolved
 
 So, we know that we can't declare step dependencies during the make phase, so it can't be in the `make` function, but at the same time, these dependencies aren't declared at the end of our configuration logic. What is going on?
 
-Let's hook a debugger and see!
+Let's hook a debugger and take a look!
 
 If we replace the debug print line with the `@breakpoint` built-in:
 ```zig
@@ -337,7 +336,7 @@ Stack level 6, frame at 0x7fffffffb6c0:
 ...
 ```
 
-So, in the build runner there is the following snippet:
+So, in the build runner, there is the following snippet:
 ```zig
 {
     var prog_node = main_progress_node.start("Configure", 0);
@@ -352,9 +351,9 @@ Let's break it down:
 - `try builder.runBuild(root)` runs the `build` function from `build.zig`, which is exposed to the build runner under the `root` module. And this `builder` is the instance of `std.Build` that you get access to in the `build` function.
 - `createModuleDependencies` is a function that calls `createModuleDependenciesForStep` for each top-level step and, thus, recursively discovers the whole graph of dependencies between modules.
 
-I have a vague idea why it has been implemented this way. The problem is the ability to add module imports dynamically. `Compile.create` could gather all the dependency steps of its `root_module` and its imports, but what should happen when `addImport` is called on a module somewhere deep after the compile step has been created? It would need to find all the dependent modules and traverse the dependency graph backwards until it finds and updates all the transitive `Compile` steps. Sounds more complicated than simply doing a single traversal after all steps and imports have been declared. The implemented solution makes `std.Build.Step.Compile` somewhat special, however. It means that a user can't reimplement the same interface as easily. There is definitely a trade-off.
+I have a vague idea why it has been implemented this way. The cultprit is the ability to add module imports dynamically. `Compile.create` could gather all the dependency steps of its `root_module` and its imports, but what should happen when `addImport` is called on a module somewhere deep in the tree after the compile step has been created? It would need to find all the dependent modules and traverse the dependency graph backwards until it finds and updates all the `Compile` steps. Sounds more complicated than simply doing a single traversal after all steps and imports have been declared. The implemented solution makes `std.Build.Step.Compile` somewhat special, however. It means that a user can't reimplement the same interface as easily. There is definitely a trade-off.
 
-### A proper fix
+## A proper fix
 
 Phew... We seem to have solved the problem with dependency tracking for generated files and wandered quite deep in the guts of the Zig build system, but other problems remain. In particular, the generated artifact ends up in the source tree, and we want to avoid that.
 
@@ -392,7 +391,7 @@ $ zig build run | xxd -r -p | ndisasm -b 64 -
 00000000  4883C005          add rax,byte +0x5
 ```
 
-Wait... What on Earth this time?
+Wait... what on Earth this time?
 
 For some reason, after we told the build system about the output, `nasm` doesn't seem to be executed on each build script run anymore.
 
@@ -406,7 +405,7 @@ execve("/home/sp/zig-installs/zig-current/zig", ["zig", "build"], 0x7ffecd8a1d20
 
 So, we see no calls to `nasm` in-between calls to the build runner and the `zig` compiler.
 
-Let's test with a more evident command that declaring an output file argument changes the behavior. We add the following to the build script:
+Let's test with a more evident command that declaring an output file argument changes the behavior:
 ```zig
 const echo = b.addSystemCommand(&.{ "echo", "All your codebase are belong to us" });
 
@@ -436,7 +435,7 @@ $ zig build
 $ zig build
 ```
 
-Let's dive in:
+The behavior after the first run confirms what we have observed, but shouldn't we see the output on the fresh run? Let's dive in:
 ```shell
 $ rm -rf .zig-cache
 
@@ -493,7 +492,7 @@ cmd nasm side effects: false
 cmd nasm cache hit
 ```
 
-If we disable declaring an output file argument and run it twice:
+If we disable declaring an output file argument for `echo` and run the build script twice:
 ```shell
 $ zig build
 cmd echo side effects: true
@@ -566,7 +565,7 @@ child.stderr_behavior = switch (run.stdio) {
 
 Based on the same side effects logic, the `Run` step chooses to ignore the output of the command. This is why we haven't seen anything in the terminal, despite the fact that the command was executed.
 
-### Back to the main line
+## Back to the main line
 
 It is nice that the build system is able to cache the results of commands. We can run pretty expensive code generation and be sure that the build system won't be wasteful. But what should we do with the `nasm` step to make it aware of the contents of `src/example.asm`?
 
@@ -610,11 +609,11 @@ Cool. We got it working, the solution is clean, and we can verify with `strace` 
 
 But... don't you have the same nudging feeling?.. How does this work?..
 
-### The Zig Build Cache System
+## The Zig Build Cache System
 
-By default, the local cache for a project lives at `.zig-cache`, relative to the root of the project. This directory has several subdirectories where `.zig-cache/o` is the most intresting for now.
+By default, the local cache for a project lives at `.zig-cache`, relative to the root of the project. This directory has several subdirectories where `.zig-cache/o` is the most interesting for now.
 
-Each cache entry is a directory at a path of the form `.zig-cache/o/<hash>/`. This hash is the hash of everything a step depends on: all its settings, arguments, flags, environment variables, input files and their contents, etc. When the `make` function of a step is run, it computes this hash from its input and, if there is a subdirectory of `.zig-cache/o/` with such a name, it's a cache hit.
+Each cache entry is a directory at a path of the form `.zig-cache/o/<hash>/`. This hash is the hash of everything a step depends on: all its settings, arguments, flags, environment variables, input files and their contents, etc. When the `make` function of a step is run, it computes this hash from its input and, if there is a subdirectory of `.zig-cache/o/` with such a name, it is a cache hit.
 
 The hash-named subdirectory will contain all the artifacts the step will produce. For the `Run` step that executes `nasm`, it is where the generated `example.bin` will end up. For a `Compile` step, it is where the binary or the library (and intermediate object files) will be put.
 
@@ -667,13 +666,13 @@ However, hashing the contents of all the files we depend on each time the build 
 
 I could continue to build up the drama, but the post is already quite long, and I am running out of energy.
 
-The way the Zig build system optimizes the hash calculation is by employing special manifest files each stored at a path of the form `.zig-cache/<hash>.txt`. There, the hash is calculated from everything the hash knows without looking into files. In the case of our `nasm` step, it is the settings, arguments, and input file paths.
+The way the Zig build system optimizes the hash calculation is by employing special manifest files each stored at a path of the form `.zig-cache/h/<hash>.txt`. There, the hash is calculated from everything the step knows without looking into files. In the case of our `nasm` step, it is the settings, arguments, and input file paths.
 
-A manifest file contains a list of all files the step depends on alongside with its hash, size, inode number, and modification time, which were recorded last time it was checked.
+A manifest file contains a list of all files the step depends on, alongside with their hashes, sizes, inode numbers, and modification timestamps, all of which were recorded the last time the manifest file was touched.
 
-When a step wants to check if there is a cache hit, it opens up its manifest file and for each input file, compares the size, the inode number, and the modification time with what is recorded in the manifest file. If these values match, then it can be said with a high certainty that the file is the same, and the hash recorded in the manifest file is used instead of recalculating the file contents hash. If any of them differs, the file is rehashed, and the manifest file is updated with the new value.
+When a step wants to check if there is a cache hit, it opens up its manifest file and for each input file, compares its actual size size, inode number, and modification time with what is recorded in the manifest file. If these values match, then it can be said with a high certainty that the file is the same, and the hash recorded in the manifest file can be used instead of rehashing the file contents. If any of them differs, the hash is recalculated, and the manifest file is updated with new values.
 
-In our case, this means that even though invocations of the `nasm` step that differ in the contents of `src/example.asm` do get a different cache entry, they share the same manifest file, which gets updated after each invocation:
+In our case, this means that even though invocations of the `nasm` step that differ in the contents of `src/example.asm` do get a different cache entry, they share the same manifest file, which might get updated after each invocation[^manifest-location]:
 
 {% include code-filename.html file="src/example.asm" %}
 ```
@@ -703,6 +702,8 @@ $ cat .zig-cache/h/d1409d2439e612663d4f28c7a42144de.txt
 19 37562991 1751837080814766160 b2c031a5d72f4b464eec657f2d94ea65 1 src/example.asm
 ```
 
+[^manifest-location]: If you wonder how I found the manifest file path, I simply cleared the cache and checked the contents of files in `.zig-cache/h`. There were few files.
+
 This is a good optimization, but the build system has to call `stat` to get the metadata on each input file, nonetheless; and there are many of these calls each time:
 ```shell
 $ strace -f -e trace=stat,statx,lstat,fstat zig build 2>&1 | grep -E 'stat|lstat|fstat|statx' | wc -l
@@ -710,12 +711,12 @@ $ strace -f -e trace=stat,statx,lstat,fstat zig build 2>&1 | grep -E 'stat|lstat
 1722
 ```
 
-Such state of affairs can be improved by the new `--watch` mode that can leverage the file system APIs to be notified about which files have changed precisely.
+Such state of affairs can be improved by the new `--watch` mode that can leverage the file system APIs to be notified precisely about which files have changed.
 
 
-### Tying back
+## Tying back
 
-We have dived quite deeply into the internals of the build system. Let's return to what we started with and tie the last hanging threads.
+We have dived quite deep into the internals of the build system. Let’s return to where we started and tie up the remaining loose ends.
 
 As we have already found out, the cache key is calculated during the `make` phase via a complicated process. Therefore, the path at which the generated `example.bin` artifact will be put is not known during the configuration phase, when we must provide a `LazyPath` to another step.
 
@@ -757,7 +758,7 @@ During `nasm`'s `make` phase, the file path becomes known, and the step writes i
 
 ## Conclusion
 
-Despite the long journey, the final build script is very simple:
+Despite the long journey, the final build script turns out to be quite simple:
 
 {% include code-filename.html file="build.zig" %}
 ```zig
@@ -801,18 +802,18 @@ pub fn build(b: *std.Build) void {
 }
 ```
 
-I have really enjoyed fumbling with the Zig build system. It strikes a great balance between declarative and imperative. You declare a set of steps and their dependencies, and the build system uses that for caching, printing the help message, tracking file changes, and so on. Moreover, the Zig build system provides a solid set of built-in steps. At the same time, you are not constrained by only the use cases the developers have anticipated. You can create your own step and run arbitrary code in the `make` function.
+I really enjoyed fumbling with the Zig build system. It strikes a great balance between declarative and imperative. You declare a set of steps and their dependencies, and the build system uses that for caching, printing the help message, tracking file changes, and so on. Moreover, the Zig build system provides a solid set of built-in steps. At the same time, you are not constrained by only the use cases the developers have anticipated. You can create your own step and run arbitrary code in the `make` function.
 
-While trying to solve the initial problem and in the course of writing this post, I went from an almost complete noob understanding of the Zig build system to a quite confident grasp of its internals. What surprised me the most is how readable the sources of the build system and the standard library are[^std-readability] and how hackable the build system, the standard library, and the Zig compiler itself are. I could easily obtain the command for the build runner (though, I'd like the process to be even more streamlined) and launch it under a debugger.
+While solving the initial problem and in the course of writing this post, I went from an almost complete noob understanding of the Zig build system to a quite confident grasp of its internals. What surprised me the most is how readable the sources of the build system and the standard library are[^std-readability] and how hackable the build system, the standard library, and the Zig compiler itself are. I could easily obtain the command for the build runner (though, I'd like the process to be even more streamlined) and launch it under a debugger.
 
 Zig made a very interesting choice: it moved all the compiler magic into explicit `@builtin`s which means that the standard library doesn't have any magic in it. It is just an ordinary library[^zig-std-powerless] which is built with the same compiler and goes through the same cache system. This has several advantages:
 - The standard library (and the rest of the build system) is checked in the cache and gets rebuilt if any of the files change each time you run `zig build-exe` (or others) either directly or indirectly via `zig build`. This allows you to hack the standard library and get instant results in our current project. How cool is that?
 - In debug mode, the standard library is also built in debug mode with debug symbols on, which makes it possible to step into the standard library in the debugger (hello, Rust).
 - Cross-compilation becomes easy, too. There doesn't have to be a precompiled distribution of the standard library for every supported target. Under whatever target Zig can compile, relevant bits of `std` will be available.
 
-I could even clone the `zig` repo and build the debug version of the compiler with a plain `zig built` in a matter of *minutes*. I could then use my version of the Zig compiler (with e.g. debug logs enabled) in the build system. Mindblowing. Though, I found ways to test and exihibit all the behaviors described in this post without going that far.
+I could even clone the `zig` repo and build the debug version of the compiler with a plain `zig built` in a matter of *minutes*. I could then use my version of the Zig compiler (with e.g. debug logs enabled) in the build system. Mindblowing. Though, I found ways to test and exhibit all the behaviors described in this post without going that far.
 
-[^std-readability]: Zig is a new language and it hasn't reached a stable version yet so it can afford introducing breaking changes and keeping the code in a clean state, and I'm glad it does. Backwards compatibility concerns can mess the code, and you can already see traces of this deterioration in the Rust standard library. However, they are very careful with it and the code quality there is still very high. If you ever took a look at the sources of the C++ standard library in any of the major compilers, you know how bad things can get.
+[^std-readability]: Zig is a new language and it hasn't reached a stable version yet so it can afford introducing breaking changes and keeping the code in a clean state, and I'm glad it does. Backwards compatibility concerns can mess the code, and you can already see traces of this deterioration in the Rust standard library. However, they are very careful with it and the code quality there is still very high. If you've ever looked at the sources of the C++ standard library in any of the major compilers, you know how bad things can get.
 
 [^zig-std-powerless]: Thanks [matklad](https://matklad.github.io/2025/03/19/comptime-zig-orm.html) for the insight.
 
