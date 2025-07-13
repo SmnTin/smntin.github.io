@@ -71,3 +71,9 @@ pre {
   z-index: 2;
   position: relative;
 }
+
+code.language-plaintext {
+  background-color: var(--code-inline-bg);
+  border-radius: 4px;
+  padding: 0.1em 0.3em;
+}
