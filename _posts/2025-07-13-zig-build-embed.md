@@ -114,19 +114,25 @@ We can verify that it works as expected by printing the contents or `src/example
 $ xxd -p src/example.bin
 4883c005
 ```
-...or by disassembling the output of the program:
+...or by disassembling the output of the program[^stderr-logs]:
 ```shell
 $ zig build run | xxd -r -p | ndisasm -b 64 -
 00000000  4883C005          add rax,byte +0x5
 ```
 
-What's nice about this setup is that the output from the build system and the compiler goes to `stderr` so it doesn't interfere with what gets passed in the pipeline.
+[^stderr-logs]: What's nice about this setup is that the output from the build system and the compiler goes to `stderr` so it doesn't interfere with what gets passed in the pipeline. And that's actually the purpose of `stderr` despite its unfortunate name. It can be used for data that we want to display but don't want to be considered the output of the program. For example, `cargo` also prints its logs to `stderr`, so you can pipe `cargo run`, too. `make` (at least on Debian) uses `stdout` for its logs, however.
 
 ## First attempt at automating the assembly process
 
 Let's add a step to the build script to run `nasm` for us:
 ```zig
-const nasm = b.addSystemCommand(&.{ "nasm", "-fbin", "-o", "src/example.bin", "src/example.asm" });
+const nasm = b.addSystemCommand(&.{
+    "nasm",
+    "-fbin",
+    "-o",
+    "src/example.bin",
+    "src/example.asm",
+});
 ```
 
 ... and make the compilation step depend on it:
@@ -246,7 +252,8 @@ We will understand why `LazyPath` takes a pointer to `GeneratedFile` and what th
 
 For now, let's try to express the idea that the file is generated:
 ```zig
-const generated_file = b.allocator.create(std.Build.GeneratedFile) catch @panic("OOM");
+const generated_file =
+    b.allocator.create(std.Build.GeneratedFile) catch @panic("OOM");
 generated_file.* = .{
     .step = &nasm.step,
     .path = "src/example.bin",
@@ -359,7 +366,12 @@ Phew... We seem to have solved the problem with dependency tracking for generate
 
 Let's start with the solution right away, and then figure out how it works:
 ```zig
-const nasm = b.addSystemCommand(&.{ "nasm", "-fbin", "src/example.asm", "-o" });
+const nasm = b.addSystemCommand(&.{
+    "nasm",
+    "-fbin",
+    "src/example.asm",
+    "-o",
+});
 const example_bin_path = nasm.addOutputFileArg("example.bin");
 
 exe_mod.addAnonymousImport("example", .{
@@ -407,7 +419,10 @@ So, we see no calls to `nasm` in-between calls to the build runner and the `zig`
 
 Let's test with a more evident command that declaring an output file argument changes the behavior:
 ```zig
-const echo = b.addSystemCommand(&.{ "echo", "All your codebase are belong to us" });
+const echo = b.addSystemCommand(&.{
+    "echo",
+    "All your codebase are belong to us",
+});
 
 nasm.step.dependOn(&echo.step);
 ```
@@ -475,10 +490,15 @@ const has_side_effects = run.hasSideEffects();
 
 // ...
 
-std.debug.print("cmd {s} side effects: {any}\n", .{ run.argv.items[0].bytes, has_side_effects });
+std.debug.print("cmd {s} side effects: {any}\n", .{
+    run.argv.items[0].bytes,
+    has_side_effects,
+});
 
 if (!has_side_effects and try step.cacheHitAndWatch(&man)) {
-    std.debug.print("cmd {s} cache hit\n", .{run.argv.items[0].bytes});
+    std.debug.print("cmd {s} cache hit\n", .{
+        run.argv.items[0].bytes,
+    });
 
     // cache hit, skip running command
     // ...
@@ -625,7 +645,10 @@ if (!has_side_effects and try step.cacheHitAndWatch(&man)) {
     // cache hit, skip running command
     const digest = man.final();
 
-    std.debug.print("cmd {s} cache hit: {s}\n", .{ run.argv.items[0].bytes, digest });
+    std.debug.print("cmd {s} cache hit: {s}\n", .{
+        run.argv.items[0].bytes,
+        digest,
+    });
 
     // ...
 ```
@@ -819,3 +842,5 @@ I could even clone the `zig` repo and build the debug version of the compiler wi
 
 What could be done better? Documentation. The info on the build system is scattered across blog posts, videos, and existing projects with varying degrees of how correctly they use the build system. Even though there are some quality materials, I still had to discover many things the hard way. A solid reference with a cookbook maintained by the Zig project would be of great help to get started faster.
 
+## Acknowledgments
+Thanks to [matklad](https://matklad.github.io/) for proof-reading the post!
