@@ -40,7 +40,7 @@ author:
 
 feed:
   posts_limit: 256
-  
+
 # Custom vars
 version: 3.0.0
 
@@ -50,10 +50,6 @@ nav:
     url: /blog
   - title: Atom
     url: /atom.xml
-
-# Collections like projects and posts
-collections:
-  - projects
 
 rouge:
   theme: github

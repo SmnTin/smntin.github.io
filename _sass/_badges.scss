@@ -1,11 +1,28 @@
-.badges {
-    margin-bottom: 2rem;
-    
-    a {
-        text-decoration: none;
-    }
+#badges {
+  margin-bottom: 2rem;
+
+  a.badge {
+    display: inline-block;
+    text-decoration: none;
+
     img {
-        display: inline;
         margin-bottom: 0;
     }
+  }
+
+  #email-revealed {
+    display: inline-block;
+    margin-bottom: 0;
+    height: 28px;
+    background-color: var(--gray-100);
+    padding: 0 10px;
+    border-radius: var(--border-radius);
+    vertical-align: top;
+
+    a {
+      vertical-align: top;
+      font-size: 18px;
+      color: var(--gray-900);
+    }
+  }
 }
