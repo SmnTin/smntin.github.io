@@ -1,6 +1,6 @@
 # Setup
 title: SmnTin's bay
-url: https://smntin.github.io
+url: https://smntin.dev
 paginate: 10
 paginate_path: "/blog/page-:num/"
 baseurl: ""
