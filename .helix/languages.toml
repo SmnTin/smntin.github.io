@@ -1,0 +1,14 @@
+[[language]]
+name = "python"
+auto-format = true
+language-servers = ["ruff", "pylsp"]
+indent = { tab-width = 4, unit = "    " }
+
+[language-server.pylsp.config.pylsp.plugins]
+pyflakes = { enabled = false }
+pycodestyle = { enabled = false }
+mccabe = { enabled = false }
+
+[language-server.ruff]
+command = "ruff"
+args = ["server"]

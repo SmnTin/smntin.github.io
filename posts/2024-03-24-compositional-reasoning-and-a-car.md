@@ -1,7 +1,5 @@
 ---
 title: Compositional reasoning and a car
-layout: post
-comments: true
 ---
 
 When you write code, you want it to have some properties. It might be as simple as "it works", which is the least precise the functional property :) You may also want the code to be fast, memory-efficient, and failure-tolerant. There are many properties to choose from.
@@ -11,8 +9,6 @@ Whether you are conscious about it or not, when you write code, you reason about
 The problem is that all the properties you usually want to hold are **global**. Even the simplest "it works" talks about the program as a whole. Considering that your codebase might be *hundreds of thousands of lines of code* and your brain is capable of holding around 7 things simultaneously[^1], verifying those properties might be unbearably hard.
 
 Even if you carry out the proof once, your code is not static, and you have to redo the whole process as soon as you change a single line. Moreover, you have to write the code line by line in the first place, being guided by *something*...
-
-<!--break-->
 
 ## Compositional reasoning
 
@@ -24,12 +20,12 @@ I intentionally used the term "part" because it can refer to any unit of decompo
 
 ## A car
 
-To demonstrate the power of compositional reasoning, we will consider an example not related to software at all! 
+To demonstrate the power of compositional reasoning, we will consider an example not related to software at all!
 
-![](/assets/blog/compositional-reasoning-and-a-car/drivetrain.png)
+![Drivetrain schematics](/assets/blog/compositional-reasoning-and-a-car/drivetrain.png)
 *Taken from [www.artofmanliness.com](www.artofmanliness.com).*
 
-Imagine a typical rear-wheel drivetrain of a car. It consists of an engine, a transmission, a drive shaft, a differential, and rear wheels. All are connected by smaller shafts in a chain. Let's say we want to prove that when you press the pedal, the rear wheels spin. 
+Imagine a typical rear-wheel drivetrain of a car. It consists of an engine, a transmission, a drive shaft, a differential, and rear wheels. All are connected by smaller shafts in a chain. Let's say we want to prove that when you press the pedal, the rear wheels spin.
 
 This is a **global** property that describes how the system acts as a whole, but the car consists of thousands of small parts, and thinking about how all of them interact with each other is impossible!
 
@@ -63,7 +59,7 @@ However, what is even nicer is that this reasoning scheme is resistant to change
 
 Note that the properties of all the intermediate parts between the engine and the wheels are suspiciously similar. We can formulate a property that is generic over the part: "**It** preserves rotation". Note that each of the local properties of the intermediate parts is a particular instance of this generic property.
 
-This property is an example of a **compositional property**, a property that composes, i.e. if the property is true for each part, it is true for the composition of the parts. 
+This property is an example of a **compositional property**, a property that composes, i.e. if the property is true for each part, it is true for the composition of the parts.
 
 Note that we can compose the local properties of the intermediate parts and derive an instance of the same generic property for the intermediate parts as a whole: all the intermediate parts preserve rotation. From this property, it is immediately clear why the rotation of the engine's outgoing shaft results in the wheels spinning.
 
@@ -82,16 +78,14 @@ This is where this design principle stems from. It is needed to ease the composi
 ### Building abstractions
 Another prominent variation of compositional reasoning is the idea of building layers of abstraction.
 
-![](/assets/blog/compositional-reasoning-and-a-car/layers-of-abstraction.png){:height="500px" style="display:block; margin-left:auto; margin-right:auto"}
-*Layers of abstraction.*
-{:style="text-align:center"}
+![Layers of abstraction](/assets/blog/compositional-reasoning-and-a-car/layers-of-abstraction.png "Layers of abstraction.")
 
 Your application is just another layer built on top of other layers such as your favorite framework, operating system, and hardware. Each layer is a unit in the compositional reasoning scheme. An abstraction is just a concept in a single layer with associated properties. Each layer delivers its abstractions and properties based on the abstractions and properties of the previous layer.
 
 ### Dynamic analysis
-We have been talking about reasoning about the code **statically**. That is, looking just at the code and its structure and never running it. 
+We have been talking about reasoning about the code **statically**. That is, looking just at the code and its structure and never running it.
 
-You might argue that one could have verified that pressing the pedal causes wheels to spin just by igniting the engine and testing it, and you would be completely right. Such a level of understanding is enough for a regular user but insufficient for a car mechanic. 
+You might argue that one could have verified that pressing the pedal causes wheels to spin just by igniting the engine and testing it, and you would be completely right. Such a level of understanding is enough for a regular user but insufficient for a car mechanic.
 
 Checking properties of code by running it is called **dynamic analysis**, and unit- and integration testing is one of its forms. Profilers, sanitizers, and interpreters (like [Miri](https://github.com/rust-lang/miri)) are other well-known forms of dynamic analysis.
 
@@ -109,7 +103,7 @@ There is still more to cover: why undefined behavior is so bad, what makes writi
 
 To sum up, compositional reasoning is the basis of how we, humans, reason about complex systems. As we have seen, a lot of tools, principles, methodologies, philosophies, etc. are there to aid it. Of course, you always have been applying it but I hope that this post has made you a bit more conscious of it and has shed some light on why we do the things the way we do.
 
-## Future reading
+## Further reading
 - [https://dominik-tornow.medium.com/the-magic-of-abstractions-658da757b936](https://dominik-tornow.medium.com/the-magic-of-abstractions-658da757b936)
 - [https://www.tedinski.com/2018/04/24/design-and-property-tests.html](https://www.tedinski.com/2018/04/24/design-and-property-tests.html)
 

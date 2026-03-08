@@ -1,0 +1,28 @@
+[project]
+name = "smntin.dev"
+version = "0.1.0"
+description = "Generate the website"
+requires-python = ">=3.14"
+dependencies = [
+  "Jinja2>=3.1.6",
+  "mistune>=3.2.0",
+  "pygments>=2.19.2",
+  "python-frontmatter>=1.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "honcho>=2.0.0",
+    "python-lsp-server>=1.14.0",
+    "livereload>=2.7.1",
+    "ruff>=0.15.6",
+]
+
+[tool.ruff]
+line-length = 100
+indent-width = 4
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true

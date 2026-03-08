@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section id="about">
+    <p>
+      <img alt="My photo" src="/assets/my-photo.jpg" align="right" style="margin-left: 1rem; width: 11rem" />
+      Hi! Welcome to my personal page. I love systems programming and building simple, robust,
+      and performant software. I used to do a bit of type theory, programming languages research,
+      robotics, and gamedev. Currently, I work at a trading startup where we’re building a
+      systematic trading platform in Rust from scratch.
+    </p>
+    <div class="badges">
+      <a class="badge" href="https://github.com/SmnTin">
+        <img alt="github" src="https://img.shields.io/badge/github-grey?style=for-the-badge&amp;logo=github" />
+      </a>
+      <a class="badge" href="https://t.me/smntin">
+        <img alt="telegram" src="https://img.shields.io/badge/telegram-blue?style=for-the-badge&amp;logo=telegram&amp;logoColor=white" />
+      </a>
+      <a class="badge" id="email-reveal-button" onclick="
+          const emailEncoded = 'smn dot pankv at gmail dot com'
+          const emailDecoded = emailEncoded.replaceAll(' dot ', '.').replace(' at ', '@')
+          const badges = document.querySelector('#badges')
+          const emailRevealButton = badges.querySelector('#email-reveal-button')
+          const emailRevealed = badges.querySelector('#email-revealed')
+          const emailLink = badges.querySelector('#email-link')
+
+          emailRevealButton.hidden = true
+          emailRevealed.hidden = false
+          emailLink.href = `mailto:${emailDecoded}`
+          emailLink.textContent = emailDecoded
+        ">
+        <img alt="email reveal" src="https://img.shields.io/badge/email-red?style=for-the-badge&amp;logo=mail.ru&amp;logoColor=white" />
+      </a>
+      <span id="email-revealed" hidden="">
+        <a id="email-link"></a>
+      </span>
+    </div>
+  </section>
+{% endblock %}

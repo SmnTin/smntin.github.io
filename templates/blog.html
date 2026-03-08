@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+  {% for year, posts in posts | groupby("date.year") | reverse %}
+    <section class="blog-year-section" aria-labelledby="blog-{{ year }}-heading">
+      <h2 id="blog-{{ year }}-heading">{{ year }}</h2>
+      <ul>
+        {% for post in posts %}
+          <li> <time datetime="{{ post.date }}">[{{ post.date }}]</time> <a href="{{ post.url_rel }}">{{ post.title }}</a> </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endfor %}
+{% endblock %}
+
