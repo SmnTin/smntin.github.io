@@ -1,7 +1,5 @@
 ---
 title: Embedding machine code with the Zig Build System
-layout: post
-comments: true
 ---
 
 For purposes that would become clear in a future post, I needed to solve a curious problem in the Zig build system. Prior to that, I knew very little about it. I expected the problem to be easy to solve, and it actually is, but I discovered a lot along the way.
@@ -9,8 +7,6 @@ For purposes that would become clear in a future post, I needed to solve a curio
 Here’s the problem I needed to solve: I wanted to assemble a listing with `nasm` and embed the machine code in the Zig program to be able to manipulate it as plain bytes. What’s interesting is that I wanted to utilize the build system to automate the process and cache/rebuild as needed.
 
 The post is basically a write-up of my findings. The final solution is in the [conclusion](#conclusion), but the path to there was quite fun.
-
-<!--break-->
 
 ## Disclaimer
 
@@ -36,8 +32,7 @@ With the ceremony out of the way, here's the story.
 Let's start with the initial setup. The Zig version is 0.14.1, and I am on a Linux machine.
 
 Here is our main file:
-{% include code-filename.html file="src/main.zig" %}
-```zig
+```zig src/main.zig
 const std = @import("std");
 
 pub fn main() !void {
@@ -54,16 +49,14 @@ const bytes = @embedFile("example.bin");
 It expects the file with the machine code to be available at module path `example.bin`. It embeds the file with the `@embedFile` built-in, which returns a pointer to a null-terminated byte array. The data is `comptime`-known and can be used in other `comptime` expressions. The `main` function prints the contents of the array to `stdout` in the hexadecimal format.
 
 We will assemble the following listing:
-{% include code-filename.html file="src/example.asm" %}
-```nasm
+```nasm src/example.asm
 bits 64
 add rax, 5
 ```
 It is intentionally very simple so we won't be overwhelmed by a large output.
 
 The build system is set up as follows:
-{% include code-filename.html file="build.zig" %}
-```zig
+```zig build.zig
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
@@ -354,6 +347,7 @@ So, in the build runner, there is the following snippet:
 ```
 
 Let's break it down:
+
 - `main_progress_node` refers to the `std.Progress` API, which is responsible for nicely displaying the build progress when we run `zig build`.
 - `try builder.runBuild(root)` runs the `build` function from `build.zig`, which is exposed to the build runner under the `root` module. And this `builder` is the instance of `std.Build` that you get access to in the `build` function.
 - `createModuleDependencies` is a function that calls `createModuleDependenciesForStep` for each top-level step and, thus, recursively discovers the whole graph of dependencies between modules.
@@ -600,8 +594,7 @@ We tell the build system explicitly that there is an argument which is a file. A
 
 Let's test that it finally functions:
 
-{% include code-filename.html file="src/example.asm" %}
-```
+```nasm src/example.asm
 bits 64
 add rax, 5
 ```
@@ -611,8 +604,7 @@ $ zig build run | xxd -r -p | ndisasm -b 64 -
 00000000  4883C005          add rax,byte +0x5
 ```
 
-{% include code-filename.html file="src/example.asm" %}
-```
+```nasm src/example.asm
 bits 64
 add rax, 6
 ```
@@ -655,8 +647,7 @@ if (!has_side_effects and try step.cacheHitAndWatch(&man)) {
 
 If we run it on different versions of `src/example.asm`:
 
-{% include code-filename.html file="src/example.asm" %}
-```
+```nasm src/example.asm
 bits 64
 add rax, 5
 ```
@@ -666,8 +657,7 @@ $ zig build
 cmd nasm cache hit: 9460d422afbe77dba6d523670efb111e
 ```
 
-{% include code-filename.html file="src/example.asm" %}
-```
+```nasm src/example.asm
 bits 64
 add rax, 6
 ```
@@ -697,8 +687,7 @@ When a step wants to check if there is a cache hit, it opens up its manifest fil
 
 In our case, this means that even though invocations of the `nasm` step that differ in the contents of `src/example.asm` do get a different cache entry, they share the same manifest file, which might get updated after each invocation[^manifest-location]:
 
-{% include code-filename.html file="src/example.asm" %}
-```
+```nasm src/example.asm
 bits 64
 add rax, 5
 ```
@@ -711,8 +700,7 @@ $ cat .zig-cache/h/d1409d2439e612663d4f28c7a42144de.txt
 19 37562985 1751837044258175244 50517e0e12920d27b774fdb95d32aea1 1 src/example.asm
 ```
 
-{% include code-filename.html file="src/example.asm" %}
-```
+```nasm src/example.asm
 bits 64
 add rax, 6
 ```
@@ -783,8 +771,7 @@ During `nasm`'s `make` phase, the file path becomes known, and the step writes i
 
 Despite the long journey, the final build script turns out to be quite simple:
 
-{% include code-filename.html file="build.zig" %}
-```zig
+```zig build.zig
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
