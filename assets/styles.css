@@ -73,6 +73,10 @@ body {
   background-color: var(--body-bg);
 }
 
+p {
+  text-align: justify;
+}
+
 a {
   color: var(--link-color);
 }
@@ -103,6 +107,10 @@ body > .container {
       word-spacing: 1rem;
     }
   }
+}
+
+section {
+  margin-bottom: 3rem;
 }
 
 .badges {
