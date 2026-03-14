@@ -2,8 +2,8 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8" />
-    <title>{% block title %}SmnTin's Bay{% endblock %}</title>
-    <meta name="viewport" content="width=device-width" />
+    <title>{% block title %}{{ site.title }}{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="/assets/styles.css" />
     <link rel="canonical" href="https://smntin.dev" />
     <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="SmnTin's Bay">
@@ -17,6 +17,9 @@
     <meta property="og:url" content="https://smntin.dev" />
     <meta property="og:site_name" content="SmnTin’s bay" />
     <meta property="og:type" content="website" />
+
+    <script data-goatcounter="https://smntin.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
 
     {% block head %}{% endblock %}
   </head>
