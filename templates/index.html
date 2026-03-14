@@ -16,24 +16,13 @@
       <a class="badge" href="https://t.me/smntin">
         <img alt="telegram" src="https://img.shields.io/badge/telegram-blue?style=for-the-badge&amp;logo=telegram&amp;logoColor=white" />
       </a>
-      <a class="badge" id="email-reveal-button" onclick="
-          const emailEncoded = 'smn dot pankv at gmail dot com'
+      <a class="badge" onmouseover="
+          const emailEncoded = '{{ email_encoded }}'
           const emailDecoded = emailEncoded.replaceAll(' dot ', '.').replace(' at ', '@')
-          const badges = document.querySelector('#badges')
-          const emailRevealButton = badges.querySelector('#email-reveal-button')
-          const emailRevealed = badges.querySelector('#email-revealed')
-          const emailLink = badges.querySelector('#email-link')
-
-          emailRevealButton.hidden = true
-          emailRevealed.hidden = false
-          emailLink.href = `mailto:${emailDecoded}`
-          emailLink.textContent = emailDecoded
-        ">
-        <img alt="email reveal" src="https://img.shields.io/badge/email-red?style=for-the-badge&amp;logo=mail.ru&amp;logoColor=white" />
+          this.href = 'mailto:' + emailDecoded
+        " href="mailto:{{ email_encoded }}">
+        <img src="https://img.shields.io/badge/email-red?style=for-the-badge&amp;logo=mail.ru&amp;logoColor=white" />
       </a>
-      <span id="email-revealed" hidden="">
-        <a id="email-link"></a>
-      </span>
     </div>
   </section>
 {% endblock %}

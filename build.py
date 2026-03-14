@@ -13,6 +13,7 @@ from datetime import date
 dest_dir_name = "dest"
 site_title = "SmnTin's Bay"
 site_url = "https://smntin.dev"
+email_encoded = "smn dot pankv at gmail dot com"
 
 
 def build():
@@ -150,7 +151,11 @@ def build():
 
     # Render other pages.
     render_page("blog.html", "blog/index.html", posts=posts)
-    render_page("index.html", "index.html")
+    render_page(
+        "index.html",
+        "index.html",
+        email_encoded=email_encoded,
+    )
 
     render_page("atom.xml", "atom.xml", posts=posts, posts_update_date=posts_update_date)
 
